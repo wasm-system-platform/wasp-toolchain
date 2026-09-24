@@ -1,2 +1,4 @@
+.vscode/
+lib/__pycache__/
 build/
 out/
