@@ -13,7 +13,7 @@ from lib.process import run
 
 
 LLVM_REPO = "https://github.com/llvm/llvm-project.git"
-DEFAULT_LLVM_REF = "llvmorg-20.1.8"
+DEFAULT_LLVM_REF = "llvmorg-21.1.8"
 
 
 def ensure_llvm_src(
@@ -23,7 +23,7 @@ def ensure_llvm_src(
     download_dir: Path
 ) -> Path:
     if llvm_src is not None:
-        llvm_src = musl_src.resolve()
+        llvm_src = llvm_src.resolve()
         if not (llvm_src / "compiler-rt").exists():
             raise RuntimeError(f"llvm source does not look valid: {llvm_src}")
         return llvm_src
@@ -73,6 +73,11 @@ def main() -> int:
 
     args.build_dir.mkdir(parents=True)
 
+    cmake_workaround = args.build_dir / "llvm-import-workaround.cmake"
+    cmake_workaround.write_text(
+        "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)\n"
+    )
+
     run(
         [
             "cmake",
@@ -86,6 +91,7 @@ def main() -> int:
             f"-DCMAKE_ASM_COMPILER={args.clang}",
             f"-DCMAKE_C_COMPILER_TARGET={args.llvm_target}",
             f"-DCMAKE_ASM_COMPILER_TARGET={args.llvm_target}",
+            f"-DCMAKE_PROJECT_CompilerRT_INCLUDE={cmake_workaround}",
             "-DCOMPILER_RT_BUILD_BUILTINS=ON",
             "-DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON",
             "-DCOMPILER_RT_BAREMETAL_BUILD=ON",
